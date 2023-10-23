@@ -3,7 +3,6 @@ interface RoomModel {
   name?: string
   position: Position
   type: RoomType
-  adjacent: { [nodeId: number]: number }
 }
 
 interface Position {
@@ -13,101 +12,33 @@ interface Position {
 }
 
 enum RoomType {
-  empty, event, omen,
+  empty, adjacent, event, omen,
 }
 
-function nextPosition(position: Position, direction: 'up' | 'down' | 'left' | 'right') {
-  switch (direction) {
-    case 'up':
-      return {
-        x: position.x,
-        y: position.y - 1,
-        layer: position.layer,
-      }
-    case 'down':
-      return {
-        x: position.x,
-        y: position.y + 1,
-        layer: position.layer,
-      }
-    case 'left':
-      return {
-        x: position.x - 1,
-        y: position.y,
-        layer: position.layer,
-      }
-    case 'right':
-      return {
-        x: position.x + 1,
-        y: position.y,
-        layer: position.layer,
-      }
-  }
-}
-
-function surroundings(position: Position) {
-  return [
-    nextPosition(position, 'up'),
-    nextPosition(position, 'down'),
-    nextPosition(position, 'left'),
-    nextPosition(position, 'right'),
+export function createAdjacentRoom(roomList: RoomModel[], centerRoom: RoomModel) {
+  const newRoomList: RoomModel[] = []
+  const centerPosition = centerRoom.position
+  const adjacentPositionList: Position[] = [
+    { x: centerPosition.x, y: centerPosition.y - 1, layer: centerPosition.layer },
+    { x: centerPosition.x, y: centerPosition.y + 1, layer: centerPosition.layer },
+    { x: centerPosition.x - 1, y: centerPosition.y, layer: centerPosition.layer },
+    { x: centerPosition.x + 1, y: centerPosition.y, layer: centerPosition.layer },
   ]
-}
-
-function dijkstra(graph: RoomModel[], startNodeId: number, endNodeId: number) {
-  const distances: { [nodeId: number]: number } = {}
-  const previous: { [nodeId: number]: number | null } = {}
-
-  graph.forEach((node) => {
-    distances[node.id] = Number.POSITIVE_INFINITY
-    previous[node.id] = null
+  adjacentPositionList.forEach((position) => {
+    const room = roomList.find((room) => {
+      return room.position.x === position.x && room.position.y === position.y
+    })
+    if (!room) {
+      newRoomList.push({
+        id: roomList.length + newRoomList.length,
+        position,
+        type: RoomType.adjacent,
+      })
+    }
   })
 
-  distances[startNodeId] = 0
-
-  const unvisited = new Set(graph.map(node => node.id))
-
-  while (unvisited.size > 0) {
-    let currentNodeId = -1
-    let currentDistance = Number.POSITIVE_INFINITY
-
-    for (const nodeId of unvisited) {
-      if (distances[nodeId] < currentDistance) {
-        currentDistance = distances[nodeId]
-        currentNodeId = nodeId
-      }
-    }
-
-    if (currentNodeId === -1)
-      break
-
-    unvisited.delete(currentNodeId)
-
-    const currentNode = graph.find(node => node.id === currentNodeId)
-    for (const [adjacentNodeId, distance] of Object.entries(currentNode!.adjacent)) {
-      const newDistance = currentDistance + distance
-      if (newDistance < distances[Number(adjacentNodeId)]) {
-        distances[Number(adjacentNodeId)] = newDistance
-        previous[Number(adjacentNodeId)] = currentNodeId
-      }
-    }
-  }
-
-  // 构建最短路径
-  const shortestPath = []
-  let currentNodeId = endNodeId
-  while (previous[currentNodeId]) {
-    shortestPath.unshift(currentNodeId)
-    currentNodeId = previous[currentNodeId]!
-  }
-  shortestPath.unshift(startNodeId)
-
-  return {
-    distance: distances[endNodeId],
-    path: shortestPath,
-  }
+  return newRoomList
 }
 
-export default RoomModel
-export type { Position }
-export { RoomType, nextPosition, surroundings, dijkstra }
+export { RoomType }
+export type { RoomModel, Position }

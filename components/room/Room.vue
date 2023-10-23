@@ -1,40 +1,42 @@
 <script setup lang="ts">
-import type RoomModel from '~/models/room'
-import type { Position } from '~/models/room'
-import { RoomType, nextPosition } from '~/models/room'
+import { RoomType } from '~/models/room'
+import type { RoomModel } from '~/models/room'
 
 const props = defineProps<{
   roomModel: RoomModel
 }>()
 
-const emits = defineEmits<{
-  onDoor: [position: Position]
-  onRoom: [room: RoomModel]
+const emit = defineEmits<{
+  handleAdjacentRoom: [id: number] // 具名元组语法
 }>()
 
-function createRoom(direction: 'up' | 'down' | 'left' | 'right') {
-  emits('onDoor', nextPosition(props.roomModel.position, direction))
-}
-
-function handleClickRoom() {
-  console.log(props.roomModel.adjacent)
-  emits('onRoom', props.roomModel)
+function handleClick() {
+  if (props.roomModel.type === RoomType.adjacent)
+    emit('handleAdjacentRoom', props.roomModel.id)
 }
 </script>
 
 <template>
-  <div relative h-240px w-360px rounded :bg="roomModel.type === RoomType.empty ? 'black' : 'blue'" @click="handleClickRoom">
-    <div absolute left-170px top-8 text-6 font-bold text-white>
-      {{ roomModel.id }}
-    </div>
-    <div v-if="roomModel.type !== RoomType.empty" h-full flex flex-col items-center justify-between>
-      <div h-4 w-8 cursor-pointer bg-yellow transition-all duration-400 hover="bg-teal" @click="createRoom('up')" />
-      <div w-62 flex justify-between>
-        <div h-8 w-4 bg-yellow transition-all duration-400 hover="bg-teal" @click="createRoom('left')" />
-
-        <div h-8 w-4 bg-yellow transition-all duration-400 hover="bg-teal" @click="createRoom('right')" />
-      </div>
-      <div h-4 w-8 bg-yellow transition-all duration-400 hover="bg-teal" @click="createRoom('down')" />
-    </div>
+  <div
+    v-if="props.roomModel.type === RoomType.event"
+    absolute size-34
+    :style="{ left: `${props.roomModel.position.x * 8.5}rem`, top: `${props.roomModel.position.y * 8.5}rem` }"
+  >
+    <img
+      size-34
+      src="/room.svg"
+    >
   </div>
+  <div
+    v-if="props.roomModel.type === RoomType.adjacent" absolute
+    size-34 bg-red :style="{ left: `${props.roomModel.position.x * 8.5}rem`, top: `${props.roomModel.position.y * 8.5}rem` }"
+    @click="handleClick"
+  >
+    {{ props.roomModel.id }}
+  </div>
+  <div
+    v-if="props.roomModel.type === RoomType.empty"
+    absolute size-34 bg-black
+    :style="{ left: `${props.roomModel.position.x * 8.5}rem`, top: `${props.roomModel.position.y * 8.5}rem` }"
+  />
 </template>
