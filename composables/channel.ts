@@ -1,12 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import type { Position } from '~/models/room'
+
+export interface PlayerState {
+  strength: number
+  agility: number
+  intelligence: number
+  willpower: number
+}
 
 export const useChannelStore = defineStore('channel', () => {
-  const supabaseUrl = 'https://suytialgkblkvsfqhlfw.supabase.co'
-  const config = useRuntimeConfig()
-  const supabase = createClient(supabaseUrl, config.public.supabaseKey)
+  // const supabaseUrl = 'https://suytialgkblkvsfqhlfw.supabase.co'
+  // const config = useRuntimeConfig()
+  // const supabase = createClient(supabaseUrl, config.public.supabaseKey)
 
-  const players = ref<any>(
+  const players = ref<any[]>(
     [
       {
         id: 1,
@@ -18,28 +26,52 @@ export const useChannelStore = defineStore('channel', () => {
           layer: 1,
         },
       },
-      {
-        id: 2,
-        created_at: '2023-10-22T20:18:19.375709+00:00',
-        user_id: '8e05659d-11b0-4645-9353-9d64cae120f5',
-        position: {
-          x: 1,
-          y: 0,
-          layer: 3,
-        },
-      },
+      // {
+      //   id: 2,
+      //   created_at: '2023-10-22T20:18:19.375709+00:00',
+      //   user_id: '8e05659d-11b0-4645-9353-9d64cae120f5',
+      //   position: {
+      //     x: 1,
+      //     y: 0,
+      //     layer: 3,
+      //   },
+      // },
     ],
   )
 
-  supabase
-    .channel('room1')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shanwu' }, (payload) => {
-      console.log('Change received!', payload)
+  const playerStates = ref<PlayerState[]>([{
+    strength: 3,
+    agility: 5,
+    intelligence: 2,
+    willpower: 2,
+  }])
+
+  // supabase
+  //   .channel('room1')
+  //   .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shanwu' }, (payload) => {
+  //     console.log('Change received!', payload)
+  //     players.value = players.value.map((player) => {
+  //       if (player.id === payload.old.id)
+  //         return payload.new
+
+  //       return player
+  //     })
+  //   })
+  //   .subscribe()
+
+  function updatePlayerPosition(id: number, position: Position) {
+    players.value = players.value.map((p) => {
+      if (p.id === id)
+        return { ...p, position }
+
+      return p
     })
-    .subscribe()
+  }
 
   return {
     players,
+    playerStates,
+    updatePlayerPosition,
   }
 })
 
